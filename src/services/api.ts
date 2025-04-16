@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 // Base URLs for the APIs
@@ -116,11 +115,17 @@ export async function getHadithCollections(): Promise<HadithCollection[]> {
 export async function getHadithsByCollection(
   collectionId: string,
   page: number = 1,
-  limit: number = 20
+  limit: number = 10
 ): Promise<Hadith[]> {
+  // Calculate the range based on page and limit
+  const start = (page - 1) * limit + 1;
+  const end = start + limit - 1;
+  const range = `${start}-${end}`;
+  
   const response = await handleApiError<{
     data: { hadiths: Hadith[] };
-  }>(fetch(`${HADITH_API_URL}/${collectionId}?page=${page}&limit=${limit}`));
+  }>(fetch(`${HADITH_API_URL}/${collectionId}?range=${range}`));
+  
   return response.data.hadiths;
 }
 

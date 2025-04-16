@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getHadithCollections, getHadithsByCollection } from "@/services/api";
 import { AppLayout } from "@/layouts/AppLayout";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import { toast } from "sonner";
 
 const HadithPage = () => {
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
@@ -19,11 +20,30 @@ const HadithPage = () => {
     queryFn: getHadithCollections
   });
 
-  const { data: hadiths, isLoading: hadithsLoading } = useQuery({
+  const { 
+    data: hadiths, 
+    isLoading: hadithsLoading,
+    error: hadithError 
+  } = useQuery({
     queryKey: ["hadiths", selectedCollection, page],
     queryFn: () => getHadithsByCollection(selectedCollection || "bukhari", page, limit),
-    enabled: !!selectedCollection
+    enabled: !!selectedCollection,
+    retry: 1
   });
+
+  // Set default collection when collections are loaded
+  useEffect(() => {
+    if (collections && collections.length > 0 && !selectedCollection) {
+      setSelectedCollection(collections[0].id);
+    }
+  }, [collections, selectedCollection]);
+
+  // Handle API error
+  useEffect(() => {
+    if (hadithError) {
+      console.error("Hadith fetch error:", hadithError);
+    }
+  }, [hadithError]);
 
   const handleCollectionChange = (collectionId: string) => {
     setSelectedCollection(collectionId);
@@ -48,7 +68,11 @@ const HadithPage = () => {
           <p className="text-muted-foreground">اختر كتاب الحديث لقراءة الأحاديث</p>
         </div>
 
-        <Tabs defaultValue={selectedCollection || "bukhari"} onValueChange={handleCollectionChange}>
+        <Tabs 
+          value={selectedCollection || ""} 
+          onValueChange={handleCollectionChange}
+          className="w-full"
+        >
           <div className="overflow-x-auto pb-2">
             <TabsList className="w-full justify-start">
               {collectionsLoading ? (
@@ -79,9 +103,9 @@ const HadithPage = () => {
                       </CardContent>
                     </Card>
                   ))
-                ) : (
+                ) : hadiths && hadiths.length > 0 ? (
                   <>
-                    {hadiths?.map((hadith) => (
+                    {hadiths.map((hadith) => (
                       <Card key={hadith.number}>
                         <CardHeader>
                           <CardTitle className="text-sm flex items-center">
@@ -123,6 +147,10 @@ const HadithPage = () => {
                       </Button>
                     </div>
                   </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">لا توجد أحاديث متاحة حالياً. يرجى اختيار كتاب آخر.</p>
+                  </div>
                 )}
               </div>
             </TabsContent>
