@@ -40,8 +40,10 @@ const TafseerPage = () => {
     queryFn: () => getAyahTafseer(selectedTafseer, surahNumber, ayahNumber),
     enabled: !!surah && ayahNumber <= surah.numberOfAyahs,
     retry: 2,
-    onError: () => {
-      toast.error("تعذر تحميل التفسير، يرجى المحاولة مرة أخرى");
+    meta: {
+      onError: () => {
+        toast.error("تعذر تحميل التفسير، يرجى المحاولة مرة أخرى");
+      }
     }
   });
 

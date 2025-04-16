@@ -25,7 +25,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         isMobile={isMobile}
       />
-      <div className="flex flex-1 overflow-hidden islamic-pattern">
+      <div className="flex flex-1 overflow-hidden app-background">
         <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="flex-1 overflow-auto">
           <div className="container py-6 mx-auto">

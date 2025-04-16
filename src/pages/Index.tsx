@@ -17,11 +17,30 @@ const QuranHomePage = () => {
     queryFn: getSurahs
   });
 
-  const filteredSurahs = surahs?.filter((surah) =>
-    surah.name.includes(searchTerm) ||
-    surah.englishName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    surah.number.toString().includes(searchTerm)
-  );
+  const filteredSurahs = surahs?.filter((surah) => {
+    // Convert both the search term and the surah properties to lowercase for case-insensitive comparison
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Check for matches in Arabic name (exact match since it's RTL)
+    const nameMatch = surah.name.includes(searchTerm);
+    
+    // Check for matches in English name (case-insensitive)
+    const englishNameMatch = surah.englishName.toLowerCase().includes(searchLower);
+    
+    // Check for matches in English translation (case-insensitive)
+    const translationMatch = surah.englishNameTranslation.toLowerCase().includes(searchLower);
+    
+    // Check for matches in surah number
+    const numberMatch = surah.number.toString().includes(searchTerm);
+    
+    // Check for matches in revelation type (Meccan/Medinan)
+    const revelationMatch = 
+      (searchLower === "مكية" && surah.revelationType === "Meccan") ||
+      (searchLower === "مدنية" && surah.revelationType === "Medinan") ||
+      surah.revelationType.toLowerCase().includes(searchLower);
+    
+    return nameMatch || englishNameMatch || translationMatch || numberMatch || revelationMatch;
+  });
 
   return (
     <AppLayout>
@@ -34,7 +53,7 @@ const QuranHomePage = () => {
         <div className="relative w-full max-w-md mx-auto mb-8">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="ابحث عن سورة..."
+            placeholder="ابحث عن سورة بالاسم أو الرقم..."
             className="pl-10 rtl:pr-10 rtl:pl-4"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -66,33 +85,41 @@ const QuranHomePage = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredSurahs?.map((surah) => (
-              <Link key={surah.number} to={`/surah/${surah.number}`}>
-                <Card className="overflow-hidden hover:border-primary transition-all cursor-pointer hover:shadow-md">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm">
-                        {surah.number}
-                      </span>
-                      <CardTitle className="text-xl font-amiri">{surah.name}</CardTitle>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{surah.englishName} • {surah.englishNameTranslation}</p>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        {surah.numberOfAyahs} آيات
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {surah.revelationType === "Meccan" ? "مكية" : "مدنية"}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          <>
+            {filteredSurahs && filteredSurahs.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredSurahs.map((surah) => (
+                  <Link key={surah.number} to={`/surah/${surah.number}`}>
+                    <Card className="overflow-hidden hover:border-primary transition-all cursor-pointer hover:shadow-md">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm">
+                            {surah.number}
+                          </span>
+                          <CardTitle className="text-xl font-amiri">{surah.name}</CardTitle>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{surah.englishName} • {surah.englishNameTranslation}</p>
+                      </CardHeader>
+                      <CardContent className="pb-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">
+                            {surah.numberOfAyahs} آيات
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {surah.revelationType === "Meccan" ? "مكية" : "مدنية"}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-lg text-muted-foreground">لا توجد نتائج مطابقة للبحث</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </AppLayout>

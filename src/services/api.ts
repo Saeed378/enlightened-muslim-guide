@@ -6,6 +6,9 @@ const QURAN_API_URL = "https://api.alquran.cloud/v1";
 const PRAYER_TIMES_API_URL = "https://api.aladhan.com/v1";
 const HADITH_API_URL = "https://api.hadith.gading.dev/books";
 
+// For the tafseer API, we'll use mock data since the actual API endpoint is having issues
+const MOCK_TAFSEER_ENABLED = true;
+
 // Types
 export interface Surah {
   number: number;
@@ -154,8 +157,21 @@ export async function getHadithsByCollection(
   return response.data.hadiths;
 }
 
-// Tafseer API Services
+// Mock Tafseer data
+const mockTafseers: Tafseer[] = [
+  { id: 1, name: "تفسير ابن كثير", language: "ar", author: "ابن كثير" },
+  { id: 2, name: "تفسير الطبري", language: "ar", author: "الطبري" },
+  { id: 3, name: "تفسير القرطبي", language: "ar", author: "القرطبي" },
+  { id: 4, name: "تفسير السعدي", language: "ar", author: "السعدي" },
+  { id: 5, name: "تفسير البغوي", language: "ar", author: "البغوي" }
+];
+
+// Tafseer API Services (with mock fallback)
 export async function getTafseerList(): Promise<Tafseer[]> {
+  if (MOCK_TAFSEER_ENABLED) {
+    return mockTafseers;
+  }
+  
   try {
     const response = await fetch("https://api.quran-tafseer.com/tafseer");
     if (!response.ok) {
@@ -166,11 +182,24 @@ export async function getTafseerList(): Promise<Tafseer[]> {
   } catch (error) {
     console.error("Tafseer API Error:", error);
     toast.error("حدث خطأ أثناء تحميل بيانات التفسير. الرجاء المحاولة مرة أخرى.");
-    throw error;
+    // Return mock data as fallback
+    return mockTafseers;
   }
 }
 
 export async function getAyahTafseer(tafsirId: number, surahNumber: number, ayahNumber: number): Promise<AyahTafseer> {
+  if (MOCK_TAFSEER_ENABLED) {
+    // Return mock tafseer data
+    const tafseer = mockTafseers.find(t => t.id === tafsirId) || mockTafseers[0];
+    return {
+      tafseer_id: tafseer.id,
+      tafseer_name: tafseer.name,
+      ayah_number: ayahNumber,
+      ayah_text: `نص الآية ${ayahNumber} من سورة ${surahNumber}`,
+      text: `هذا تفسير الآية ${ayahNumber} من سورة ${surahNumber} حسب ${tafseer.name}. هذا النص توضيحي لغرض عرض التطبيق. يمكن استبدال هذا النص بتفسير حقيقي عندما يعمل API التفسير بشكل صحيح.`
+    };
+  }
+  
   try {
     const response = await fetch(`https://api.quran-tafseer.com/tafseer/${tafsirId}/${surahNumber}/${ayahNumber}`);
     if (!response.ok) {
@@ -180,7 +209,6 @@ export async function getAyahTafseer(tafsirId: number, surahNumber: number, ayah
     return data;
   } catch (error) {
     console.error("Tafseer API Error:", error);
-    toast.error("حدث خطأ أثناء تحميل بيانات التفسير. الرجاء المحاولة مرة أخرى.");
     throw error;
   }
 }
