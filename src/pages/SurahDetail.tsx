@@ -17,39 +17,54 @@ const SurahDetailPage = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioSrc, setAudioSrc] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
 
+  // Get Surah details with improved caching
   const { data: surah, isLoading, error } = useQuery({
     queryKey: ["surah", surahNumber],
-    queryFn: () => getSurahDetail(surahNumber)
+    queryFn: () => getSurahDetail(surahNumber),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to improve performance
+    retry: 2
   });
 
-  // Load audio source when surah loads
+  // Load audio source when surah loads - with better error handling
   useEffect(() => {
     const loadAudio = async () => {
       try {
+        setIsLoadingAudio(true);
         const src = await getSurahAudio(surahNumber);
         setAudioSrc(src);
+        
+        // Preload audio
+        if (audioRef.current) {
+          audioRef.current.load();
+        }
       } catch (error) {
         console.error("Error loading audio:", error);
         toast.error("حدث خطأ أثناء تحميل الصوت");
+      } finally {
+        setIsLoadingAudio(false);
       }
     };
     
     loadAudio();
   }, [surahNumber]);
 
-  // Handle audio play/pause
+  // Handle audio play/pause with better feedback
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
+        setIsPlaying(false);
       } else {
-        audioRef.current.play().catch(err => {
+        toast.success("جاري تشغيل السورة...");
+        audioRef.current.play().then(() => {
+          setIsPlaying(true);
+        }).catch(err => {
           console.error("Error playing audio:", err);
           toast.error("حدث خطأ أثناء تشغيل الصوت");
         });
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -61,10 +76,17 @@ const SurahDetailPage = () => {
       setIsPlaying(false);
     };
     
+    const handleCanPlayThrough = () => {
+      setIsLoadingAudio(false);
+    };
+    
     if (audio) {
       audio.addEventListener("ended", handleEnded);
+      audio.addEventListener("canplaythrough", handleCanPlayThrough);
+      
       return () => {
         audio.removeEventListener("ended", handleEnded);
+        audio.removeEventListener("canplaythrough", handleCanPlayThrough);
       };
     }
   }, []);
@@ -79,6 +101,10 @@ const SurahDetailPage = () => {
     if (surahNumber < 114) {
       navigate(`/surah/${surahNumber + 1}`);
     }
+  };
+
+  const navigateToTafseer = () => {
+    navigate(`/tafseer/${surahNumber}/1`);
   };
 
   return (
@@ -120,10 +146,17 @@ const SurahDetailPage = () => {
                     variant="outline" 
                     className="rounded-full w-12 h-12 p-0 flex items-center justify-center text-primary"
                     onClick={toggleAudio}
+                    disabled={isLoadingAudio}
                   >
-                    {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+                    {isLoadingAudio ? (
+                      <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    ) : isPlaying ? (
+                      <Pause className="h-6 w-6" />
+                    ) : (
+                      <Play className="h-6 w-6" />
+                    )}
                   </Button>
-                  <audio ref={audioRef} src={audioSrc} />
+                  <audio ref={audioRef} src={audioSrc} preload="metadata" />
                 </div>
                 
                 <div className="space-y-4">
@@ -135,6 +168,14 @@ const SurahDetailPage = () => {
                           {ayah.numberInSurah}
                         </span>
                       </p>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="mt-1 text-xs"
+                        onClick={() => navigate(`/tafseer/${surahNumber}/${ayah.numberInSurah}`)}
+                      >
+                        تفسير الآية
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -153,7 +194,7 @@ const SurahDetailPage = () => {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navigate(`/tafseer/${surahNumber}/1`)}
+                onClick={navigateToTafseer}
                 className="flex items-center gap-2"
               >
                 <span>التفسير</span>

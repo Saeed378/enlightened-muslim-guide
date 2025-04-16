@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getSurahDetail, getTafseerList, getAyahTafseer, Tafseer } from "@/services/api";
@@ -21,20 +21,28 @@ const TafseerPage = () => {
   // Get Surah details
   const { data: surah, isLoading: surahLoading } = useQuery({
     queryKey: ["surah", surahNumber],
-    queryFn: () => getSurahDetail(surahNumber)
+    queryFn: () => getSurahDetail(surahNumber),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to improve loading speed
+    retry: 2
   });
 
   // Get list of tafseers
   const { data: tafseers, isLoading: tafseersLoading } = useQuery({
     queryKey: ["tafseers"],
-    queryFn: getTafseerList
+    queryFn: getTafseerList,
+    staleTime: Infinity, // This data rarely changes
+    retry: 3
   });
 
   // Get tafseer for specific ayah
   const { data: tafseer, isLoading: tafseerLoading } = useQuery({
     queryKey: ["tafseer", selectedTafseer, surahNumber, ayahNumber],
     queryFn: () => getAyahTafseer(selectedTafseer, surahNumber, ayahNumber),
-    enabled: !!surah && ayahNumber <= surah.numberOfAyahs
+    enabled: !!surah && ayahNumber <= surah.numberOfAyahs,
+    retry: 2,
+    onError: () => {
+      toast.error("تعذر تحميل التفسير، يرجى المحاولة مرة أخرى");
+    }
   });
 
   // Navigate to next/previous ayah
@@ -42,7 +50,13 @@ const TafseerPage = () => {
     if (ayahNumber > 1) {
       navigate(`/tafseer/${surahNumber}/${ayahNumber - 1}`);
     } else if (surahNumber > 1) {
-      navigate(`/tafseer/${surahNumber - 1}/1`);
+      // Get the number of ayahs in the previous surah
+      getSurahDetail(surahNumber - 1).then(prevSurah => {
+        navigate(`/tafseer/${surahNumber - 1}/${prevSurah.numberOfAyahs}`);
+      }).catch(() => {
+        // Fallback if we can't get the previous surah details
+        navigate(`/tafseer/${surahNumber - 1}/1`);
+      });
     }
   };
 
