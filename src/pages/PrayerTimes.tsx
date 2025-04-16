@@ -5,6 +5,7 @@ import { getPrayerTimes } from "@/services/api";
 import { AppLayout } from "@/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Clock, MapPin, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -141,12 +142,12 @@ const PrayerTimesPage = () => {
             ) : error ? (
               <div className="text-center py-10">
                 <p className="text-xl text-destructive">حدث خطأ أثناء تحميل بيانات الصلاة</p>
-                <button 
+                <Button 
                   onClick={handleRefresh}
                   className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   إعادة المحاولة
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
