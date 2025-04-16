@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Book, Clock, BookOpen, LucideIcon, BookText, X } from "lucide-react";
+import { Book, Clock, BookOpen, LucideIcon, BookText, X, BookMarked } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,11 @@ export function AppSidebar({ isOpen, onClose }: SidebarProps) {
       icon: Book,
       label: "القرآن الكريم",
       href: "/",
+    },
+    {
+      icon: BookMarked,
+      label: "التفاسير",
+      href: "/tafseer/1/1",
     },
     {
       icon: BookText,
@@ -86,7 +91,11 @@ export function AppSidebar({ isOpen, onClose }: SidebarProps) {
               icon={item.icon}
               label={item.label}
               href={item.href}
-              isActive={location.pathname === item.href}
+              isActive={
+                item.href === "/"
+                  ? location.pathname === "/"
+                  : location.pathname.startsWith(item.href)
+              }
             />
           ))}
         </nav>

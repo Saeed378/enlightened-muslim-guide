@@ -5,13 +5,14 @@ import { getPrayerTimes } from "@/services/api";
 import { AppLayout } from "@/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 const PrayerTimesPage = () => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [date, setDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [locationName, setLocationName] = useState<string>("تحديد الموقع...");
+  const [locationError, setLocationError] = useState<boolean>(false);
   
   const { data: prayerTimes, isLoading, error, refetch } = useQuery({
     queryKey: ["prayerTimes", location?.lat, location?.lng, date],
@@ -19,7 +20,8 @@ const PrayerTimesPage = () => {
       location 
         ? getPrayerTimes(location.lat, location.lng, date) 
         : Promise.reject("No location available"),
-    enabled: !!location
+    enabled: !!location,
+    retry: 2
   });
 
   useEffect(() => {
@@ -28,6 +30,7 @@ const PrayerTimesPage = () => {
         async (position) => {
           const { latitude, longitude } = position.coords;
           setLocation({ lat: latitude, lng: longitude });
+          setLocationError(false);
           
           // Try to get location name using reverse geocoding
           try {
@@ -47,13 +50,19 @@ const PrayerTimesPage = () => {
         },
         (error) => {
           console.error("Error getting location:", error);
+          setLocationError(true);
           toast.error("لم نتمكن من تحديد موقعك. يرجى السماح بالوصول إلى الموقع.");
           setLocationName("تعذر تحديد الموقع");
+          
+          // Use default location (Mecca) when geolocation fails
+          setLocation({ lat: 21.3891, lng: 39.8579 });
         }
       );
     } else {
       toast.error("متصفحك لا يدعم تحديد الموقع الجغرافي.");
       setLocationName("تعذر تحديد الموقع");
+      // Use default location (Mecca)
+      setLocation({ lat: 21.3891, lng: 39.8579 });
     }
   }, []);
 
@@ -90,20 +99,34 @@ const PrayerTimesPage = () => {
           <div className="flex items-center justify-center gap-2 text-muted-foreground">
             <MapPin className="h-4 w-4" />
             <p>{locationName}</p>
+            {locationError && (
+              <span className="text-destructive text-xs">(تم استخدام موقع افتراضي)</span>
+            )}
           </div>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">مواقيت الصلاة اليوم</CardTitle>
-            <CardDescription>
-              {new Date().toLocaleDateString("ar-EG", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">مواقيت الصلاة اليوم</CardTitle>
+              <CardDescription>
+                {new Date().toLocaleDateString("ar-EG", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </CardDescription>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleRefresh}
+              className="rounded-full h-10 w-10 p-0"
+            >
+              <RefreshCw className="h-5 w-5" />
+              <span className="sr-only">تحديث</span>
+            </Button>
           </CardHeader>
           <CardContent>
             {isLoading ? (

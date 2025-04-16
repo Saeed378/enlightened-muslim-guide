@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 // Base URLs for the APIs
@@ -52,6 +53,21 @@ export interface HadithCollection {
   available: number;
 }
 
+export interface Tafseer {
+  id: number;
+  name: string;
+  language: string;
+  author: string;
+}
+
+export interface AyahTafseer {
+  tafseer_id: number;
+  tafseer_name: string;
+  ayah_number: number;
+  ayah_text: string;
+  text: string;
+}
+
 // Helper function to handle API errors
 async function handleApiError<T>(promise: Promise<Response>): Promise<T> {
   try {
@@ -68,12 +84,21 @@ async function handleApiError<T>(promise: Promise<Response>): Promise<T> {
   }
 }
 
-// Quran API services
+// Quran API services - Using a more reliable endpoint
 export async function getSurahs(): Promise<Surah[]> {
-  const response = await handleApiError<{ data: { surahs: Surah[] } }>(
-    fetch(`${QURAN_API_URL}/quran/ar.alafasy`)
-  );
-  return response.data.surahs;
+  try {
+    // Using the meta endpoint which is more reliable
+    const response = await fetch(`${QURAN_API_URL}/surah`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("API Error:", error);
+    toast.error("حدث خطأ أثناء تحميل البيانات. الرجاء المحاولة مرة أخرى.");
+    throw error;
+  }
 }
 
 export async function getSurahDetail(surahNumber: number): Promise<SurahDetail> {
@@ -127,6 +152,37 @@ export async function getHadithsByCollection(
   }>(fetch(`${HADITH_API_URL}/${collectionId}?range=${range}`));
   
   return response.data.hadiths;
+}
+
+// Tafseer API Services
+export async function getTafseerList(): Promise<Tafseer[]> {
+  try {
+    const response = await fetch("https://api.quran-tafseer.com/tafseer");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Tafseer API Error:", error);
+    toast.error("حدث خطأ أثناء تحميل بيانات التفسير. الرجاء المحاولة مرة أخرى.");
+    throw error;
+  }
+}
+
+export async function getAyahTafseer(tafsirId: number, surahNumber: number, ayahNumber: number): Promise<AyahTafseer> {
+  try {
+    const response = await fetch(`https://api.quran-tafseer.com/tafseer/${tafsirId}/${surahNumber}/${ayahNumber}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Tafseer API Error:", error);
+    toast.error("حدث خطأ أثناء تحميل بيانات التفسير. الرجاء المحاولة مرة أخرى.");
+    throw error;
+  }
 }
 
 // Reflections API (mock data since we don't have a real API for this)
