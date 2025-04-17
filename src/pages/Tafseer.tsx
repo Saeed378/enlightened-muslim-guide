@@ -35,15 +35,13 @@ const TafseerPage = () => {
   });
 
   // Get tafseer for specific ayah
-  const { data: tafseer, isLoading: tafseerLoading } = useQuery({
+  const { data: tafseer, isLoading: tafseerLoading, error: tafseerError } = useQuery({
     queryKey: ["tafseer", selectedTafseer, surahNumber, ayahNumber],
     queryFn: () => getAyahTafseer(selectedTafseer, surahNumber, ayahNumber),
     enabled: !!surah && ayahNumber <= surah.numberOfAyahs,
-    retry: 2,
-    meta: {
-      onError: () => {
-        toast.error("تعذر تحميل التفسير، يرجى المحاولة مرة أخرى");
-      }
+    retry: 1,
+    onError: () => {
+      toast.error("تعذر تحميل التفسير، يرجى المحاولة مرة أخرى");
     }
   });
 
@@ -52,13 +50,7 @@ const TafseerPage = () => {
     if (ayahNumber > 1) {
       navigate(`/tafseer/${surahNumber}/${ayahNumber - 1}`);
     } else if (surahNumber > 1) {
-      // Get the number of ayahs in the previous surah
-      getSurahDetail(surahNumber - 1).then(prevSurah => {
-        navigate(`/tafseer/${surahNumber - 1}/${prevSurah.numberOfAyahs}`);
-      }).catch(() => {
-        // Fallback if we can't get the previous surah details
-        navigate(`/tafseer/${surahNumber - 1}/1`);
-      });
+      navigate(`/tafseer/${surahNumber - 1}/1`);
     }
   };
 
@@ -115,6 +107,22 @@ const TafseerPage = () => {
               <Skeleton className="h-48 w-full" />
             </CardContent>
           </Card>
+        ) : tafseerError ? (
+          <div className="text-center py-6">
+            <Card className="border-destructive/50">
+              <CardContent className="pt-6">
+                <p className="text-destructive text-lg mb-3">لم نتمكن من تحميل التفسير</p>
+                <p className="text-muted-foreground mb-4">تم استخدام بيانات بديلة مؤقتة</p>
+                <Button 
+                  onClick={() => window.location.reload()}
+                  variant="outline"
+                  className="mx-auto"
+                >
+                  إعادة المحاولة
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         ) : surah && tafseer ? (
           <Card>
             <CardHeader>

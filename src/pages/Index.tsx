@@ -9,6 +9,19 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/layouts/AppLayout";
 
+// Helper function to normalize Arabic text (remove diacritics/fancy characters)
+const normalizeArabicText = (text: string): string => {
+  return text
+    .replace(/[\u064B-\u065F]/g, '') // Remove Arabic diacritics (Tashkeel)
+    .replace(/\u0671/g, 'ا') // Replace different forms of Alef
+    .replace(/[\u0622\u0623\u0625]/g, 'ا')
+    .replace(/\u0624/g, 'و') // Replace Waw with Hamza
+    .replace(/\u0626/g, 'ي') // Replace Yaa with Hamza
+    .replace(/\u0629/g, 'ه') // Replace Taa Marbuta with Haa
+    .replace(/\u0649/g, 'ى') // Replace Alef Maksura with Yaa
+    .toLowerCase();
+};
+
 const QuranHomePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -18,17 +31,19 @@ const QuranHomePage = () => {
   });
 
   const filteredSurahs = surahs?.filter((surah) => {
-    // Convert both the search term and the surah properties to lowercase for case-insensitive comparison
-    const searchLower = searchTerm.toLowerCase();
+    if (!searchTerm.trim()) return true;
     
-    // Check for matches in Arabic name (exact match since it's RTL)
-    const nameMatch = surah.name.includes(searchTerm);
+    // Normalize the search term and surah properties
+    const searchLower = normalizeArabicText(searchTerm.toLowerCase());
+    
+    // Apply normalization to Arabic name
+    const nameMatch = normalizeArabicText(surah.name).includes(searchLower);
     
     // Check for matches in English name (case-insensitive)
-    const englishNameMatch = surah.englishName.toLowerCase().includes(searchLower);
+    const englishNameMatch = surah.englishName.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Check for matches in English translation (case-insensitive)
-    const translationMatch = surah.englishNameTranslation.toLowerCase().includes(searchLower);
+    const translationMatch = surah.englishNameTranslation.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Check for matches in surah number
     const numberMatch = surah.number.toString().includes(searchTerm);
@@ -37,7 +52,7 @@ const QuranHomePage = () => {
     const revelationMatch = 
       (searchLower === "مكية" && surah.revelationType === "Meccan") ||
       (searchLower === "مدنية" && surah.revelationType === "Medinan") ||
-      surah.revelationType.toLowerCase().includes(searchLower);
+      surah.revelationType.toLowerCase().includes(searchTerm.toLowerCase());
     
     return nameMatch || englishNameMatch || translationMatch || numberMatch || revelationMatch;
   });

@@ -6,7 +6,7 @@ import { AppLayout } from "@/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Clock, MapPin, RefreshCw } from "lucide-react";
+import { Clock, MapPin, RefreshCw, Sun, Sunrise, CloudSun, Cloud, Sunset, Moon } from "lucide-react";
 import { toast } from "sonner";
 
 const PrayerTimesPage = () => {
@@ -79,18 +79,48 @@ const PrayerTimesPage = () => {
     return `${hour12}:${minute} ${ampm}`;
   };
 
-  const prayerNames = {
-    Fajr: "الفجر",
-    Sunrise: "الشروق",
-    Dhuhr: "الظهر",
-    Asr: "العصر",
-    Maghrib: "المغرب",
-    Isha: "العشاء"
+  // Prayer names and icons mapping
+  const prayerConfig = {
+    Fajr: { name: "الفجر", icon: <Sunrise className="h-5 w-5 text-amber-500" /> },
+    Sunrise: { name: "الشروق", icon: <Sun className="h-5 w-5 text-amber-500" /> },
+    Dhuhr: { name: "الظهر", icon: <CloudSun className="h-5 w-5 text-primary" /> },
+    Asr: { name: "العصر", icon: <Cloud className="h-5 w-5 text-primary" /> },
+    Maghrib: { name: "المغرب", icon: <Sunset className="h-5 w-5 text-orange-500" /> },
+    Isha: { name: "العشاء", icon: <Moon className="h-5 w-5 text-blue-600" /> }
   };
 
   const handleRefresh = () => {
     refetch();
   };
+
+  // Get current time
+  const now = new Date();
+  const currentTime = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+  // Find next prayer
+  const getNextPrayer = () => {
+    if (!prayerTimes) return null;
+    
+    const prayers = [
+      { name: "Fajr", time: prayerTimes.Fajr },
+      { name: "Sunrise", time: prayerTimes.Sunrise },
+      { name: "Dhuhr", time: prayerTimes.Dhuhr },
+      { name: "Asr", time: prayerTimes.Asr },
+      { name: "Maghrib", time: prayerTimes.Maghrib },
+      { name: "Isha", time: prayerTimes.Isha }
+    ];
+    
+    for (const prayer of prayers) {
+      if (prayer.time > currentTime) {
+        return prayer;
+      }
+    }
+    
+    // If no prayer is found, the next prayer is Fajr of the next day
+    return { name: "Fajr", time: "Next day" };
+  };
+
+  const nextPrayer = getNextPrayer();
 
   return (
     <AppLayout>
@@ -105,6 +135,25 @@ const PrayerTimesPage = () => {
             )}
           </div>
         </div>
+
+        {nextPrayer && !isLoading && !error && (
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl text-center">الصلاة القادمة</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center py-6">
+              <div className="flex flex-col items-center justify-center">
+                {prayerConfig[nextPrayer.name as keyof typeof prayerConfig].icon}
+                <h2 className="text-3xl font-bold mt-2">
+                  {prayerConfig[nextPrayer.name as keyof typeof prayerConfig].name}
+                </h2>
+                <p className="text-2xl font-medium mt-1">
+                  {formatTime(nextPrayer.time)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -152,15 +201,25 @@ const PrayerTimesPage = () => {
             ) : (
               <div className="space-y-4">
                 {prayerTimes && Object.entries(prayerTimes).map(([key, value]) => {
-                  if (key === "Fajr" || key === "Sunrise" || key === "Dhuhr" || key === "Asr" || key === "Maghrib" || key === "Isha") {
+                  if (key in prayerConfig) {
+                    const config = prayerConfig[key as keyof typeof prayerConfig];
+                    const isNext = nextPrayer && nextPrayer.name === key;
+                    
                     return (
                       <div 
                         key={key} 
-                        className="flex justify-between items-center p-4 rounded-lg border hover:border-primary transition-colors"
+                        className={`flex justify-between items-center p-4 rounded-lg border ${
+                          isNext ? 'bg-primary/10 border-primary' : 'hover:border-primary/50'
+                        } transition-colors`}
                       >
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-5 w-5 text-primary" />
-                          <span className="font-medium">{prayerNames[key as keyof typeof prayerNames]}</span>
+                        <div className="flex items-center gap-3">
+                          {config.icon}
+                          <span className="font-medium">{config.name}</span>
+                          {isNext && (
+                            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                              القادمة
+                            </span>
+                          )}
                         </div>
                         <span className="text-lg font-medium">{formatTime(value)}</span>
                       </div>
@@ -173,17 +232,32 @@ const PrayerTimesPage = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-r from-primary/5 to-transparent">
           <CardHeader>
             <CardTitle>نصائح للصلاة</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 list-disc list-inside">
-              <li>حافظ على الصلاة في وقتها.</li>
-              <li>توضأ بشكل صحيح قبل كل صلاة.</li>
-              <li>صلِ بخشوع وتركيز.</li>
-              <li>احرص على أداء السنن الراتبة بعد الفرائض.</li>
-              <li>قم بصلاة الجماعة في المسجد كلما أمكن ذلك.</li>
+            <ul className="space-y-3 list-disc list-inside">
+              <li className="flex items-start">
+                <span className="inline-block w-2 h-2 bg-primary rounded-full mt-2 mr-2"></span>
+                <span>حافظ على الصلاة في وقتها.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="inline-block w-2 h-2 bg-primary rounded-full mt-2 mr-2"></span>
+                <span>توضأ بشكل صحيح قبل كل صلاة.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="inline-block w-2 h-2 bg-primary rounded-full mt-2 mr-2"></span>
+                <span>صلِ بخشوع وتركيز.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="inline-block w-2 h-2 bg-primary rounded-full mt-2 mr-2"></span>
+                <span>احرص على أداء السنن الراتبة بعد الفرائض.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="inline-block w-2 h-2 bg-primary rounded-full mt-2 mr-2"></span>
+                <span>قم بصلاة الجماعة في المسجد كلما أمكن ذلك.</span>
+              </li>
             </ul>
           </CardContent>
         </Card>

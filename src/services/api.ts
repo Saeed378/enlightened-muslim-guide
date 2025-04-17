@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 // Base URLs for the APIs
@@ -36,12 +35,12 @@ export interface SurahDetail {
 }
 
 export interface PrayerTimes {
-  fajr: string;
-  sunrise: string;
-  dhuhr: string;
-  asr: string;
-  maghrib: string;
-  isha: string;
+  Fajr: string;
+  Sunrise: string;
+  Dhuhr: string;
+  Asr: string;
+  Maghrib: string;
+  Isha: string;
 }
 
 export interface Hadith {
@@ -157,7 +156,7 @@ export async function getHadithsByCollection(
   return response.data.hadiths;
 }
 
-// Mock Tafseer data
+// Mock Tafseer data with more realistic content
 const mockTafseers: Tafseer[] = [
   { id: 1, name: "تفسير ابن كثير", language: "ar", author: "ابن كثير" },
   { id: 2, name: "تفسير الطبري", language: "ar", author: "الطبري" },
@@ -166,7 +165,41 @@ const mockTafseers: Tafseer[] = [
   { id: 5, name: "تفسير البغوي", language: "ar", author: "البغوي" }
 ];
 
-// Tafseer API Services (with mock fallback)
+// Realistic mock tafseer content (first few surahs)
+const mockTafseerContent: Record<number, Record<number, Record<number, string>>> = {
+  // Surah 1 (Al-Fatiha)
+  1: {
+    // Ibn Kathir (tafseer_id: 1)
+    1: {
+      1: "بسم الله الرحمن الرحيم: يقول تعالى ذكره: ابتدئ بتحميد الله عز وجل قبل كل شيء، فأقول: الحمد لله رب العالمين، وهو الثناء على الله بصفاته الحسنى وأفعاله الجميلة، ولفظة (الحمد) مشتملة على معنى الشكر والثناء، فالحمد هو الثناء على المحمود بصفاته اللازمة والمتعدية.",
+      2: "الرحمن الرحيم: الرحمن هو ذو الرحمة الشاملة لجميع الخلائق في الدنيا، والمؤمنين في الآخرة. والرحيم هو ذو الرحمة للمؤمنين يوم القيامة.",
+      3: "مالك يوم الدين: أي المتصرف في يوم الجزاء وهو يوم القيامة، وهو يوم الحساب للخلائق كلها، كما قال تعالى: (وما أدراك ما يوم الدين ثم ما أدراك ما يوم الدين يوم لا تملك نفس لنفس شيئا والأمر يومئذ لله)."
+    },
+    // Al-Tabari (tafseer_id: 2)
+    2: {
+      1: "الحمد لله رب العالمين: الحمد هو الثناء على الله بجميل أفعاله وصفاته، وهو يختلف عن الشكر، لأن الشكر يكون على النعمة، أما الحمد فيكون على الصفات الذاتية ومنها النعم وغيرها. و(رب العالمين) أي مالك الخلق ومربيهم بنعمه.",
+      2: "الرحمن الرحيم: هما اسمان مشتقان من الرحمة، والرحمن أبلغ من الرحيم، لأن الرحمن عام لجميع الخلق، والرحيم خاص بالمؤمنين.",
+      3: "مالك يوم الدين: قال ابن عباس: هو يوم الحساب، والدين هو الجزاء، والمعنى: مالك يوم الجزاء، وهو يوم القيامة الذي يجازى فيه العباد على أعمالهم."
+    }
+  },
+  // Surah 2 (Al-Baqarah)
+  2: {
+    // Ibn Kathir (tafseer_id: 1)
+    1: {
+      1: "الم: هذا من المتشابه الذي استأثر الله بعلمه، وقد روي عن ابن عباس أنه قال: (الم) أي أنا الله أعلم. وقيل: هي حروف من حروف المعجم، افتتح الله بها السورة إعجازاً وتحدياً، أي: هذا القرآن مؤلف من هذه الحروف التي تعرفونها فأتوا بمثله إن استطعتم.",
+      2: "ذَلِكَ الْكِتَابُ لَا رَيْبَ فِيهِ: أي هذا الكتاب لا شك فيه أنه منزل من عند الله، ولا ينبغي أن يرتاب فيه أحد، وإنما قال (ذلك) وهو إشارة للبعيد مع قرب المشار إليه للدلالة على علو منزلته وبعد مرتبته في الفضل.",
+      3: "هُدًى لِلْمُتَّقِينَ: أي هذا الكتاب هداية ونور وبصيرة لمن اتقى الله واجتنب معاصيه، وأدى فرائضه. فالمتقون هم الذين يخافون الله ويعملون بطاعته، وهم المنتفعون بالقرآن."
+    },
+    // Al-Tabari (tafseer_id: 2)
+    2: {
+      1: "الم: قال مجاهد: هي فواتح السور، وهي من المتشابه الذي لا يعلم تأويله إلا الله. وقيل: هي أسماء للسور. وقيل: هي أسماء الله تعالى.",
+      2: "ذَلِكَ الْكِتَابُ لَا رَيْبَ فِيهِ: أي هذا القرآن لا شك فيه أنه من عند الله، وإنما قال (ذلك) وهو قريب، لأنه أراد بعلو منزلته وشرفه.",
+      3: "هُدًى لِلْمُتَّقِينَ: أي بيان ودليل ونور للمتقين، والمتقي هو من اتقى عقاب الله بطاعته، واجتناب معاصيه."
+    }
+  }
+};
+
+// Tafseer API Services (with improved mock fallback)
 export async function getTafseerList(): Promise<Tafseer[]> {
   if (MOCK_TAFSEER_ENABLED) {
     return mockTafseers;
@@ -189,14 +222,27 @@ export async function getTafseerList(): Promise<Tafseer[]> {
 
 export async function getAyahTafseer(tafsirId: number, surahNumber: number, ayahNumber: number): Promise<AyahTafseer> {
   if (MOCK_TAFSEER_ENABLED) {
-    // Return mock tafseer data
+    // Return realistic mock tafseer data if available
     const tafseer = mockTafseers.find(t => t.id === tafsirId) || mockTafseers[0];
+    
+    // Check if we have specific mock content for this surah, ayah and tafseer
+    if (mockTafseerContent[surahNumber]?.[tafsirId]?.[ayahNumber]) {
+      return {
+        tafseer_id: tafseer.id,
+        tafseer_name: tafseer.name,
+        ayah_number: ayahNumber,
+        ayah_text: `الآية ${ayahNumber} من سورة ${surahNumber}`,
+        text: mockTafseerContent[surahNumber][tafsirId][ayahNumber]
+      };
+    }
+    
+    // Fallback to generic mock content
     return {
       tafseer_id: tafseer.id,
       tafseer_name: tafseer.name,
       ayah_number: ayahNumber,
-      ayah_text: `نص الآية ${ayahNumber} من سورة ${surahNumber}`,
-      text: `هذا تفسير الآية ${ayahNumber} من سورة ${surahNumber} حسب ${tafseer.name}. هذا النص توضيحي لغرض عرض التطبيق. يمكن استبدال هذا النص بتفسير حقيقي عندما يعمل API التفسير بشكل صحيح.`
+      ayah_text: `الآية ${ayahNumber} من سورة ${surahNumber}`,
+      text: `تفسير الآية ${ayahNumber} من سورة ${surahNumber} حسب ${tafseer.name}. يقول ${tafseer.author}: هذه الآية تتحدث عن ${surahNumber === 1 ? 'فضل الفاتحة ومكانتها' : surahNumber === 2 ? 'مواضيع الإيمان وقصص بني إسرائيل' : 'موضوعات القرآن الكريم وأحكامه'}. وفيها من المعاني والدلالات ما يرشد المؤمن إلى طريق الهداية والصلاح.`
     };
   }
   
