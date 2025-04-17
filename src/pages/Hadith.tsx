@@ -10,6 +10,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
+// Arabic translations for hadith collections
+const collectionTranslations: Record<string, string> = {
+  "bukhari": "صحيح البخاري",
+  "muslim": "صحيح مسلم",
+  "tirmidhi": "سنن الترمذي",
+  "abudawud": "سنن أبي داود",
+  "nasai": "سنن النسائي",
+  "ibnmajah": "سنن ابن ماجه",
+  "malik": "موطأ مالك",
+  "ahmad": "مسند أحمد"
+};
+
 const HadithPage = () => {
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -82,7 +94,7 @@ const HadithPage = () => {
               ) : (
                 collections?.map((collection) => (
                   <TabsTrigger key={collection.id} value={collection.id}>
-                    {collection.name}
+                    {collectionTranslations[collection.id] || collection.name}
                   </TabsTrigger>
                 ))
               )}

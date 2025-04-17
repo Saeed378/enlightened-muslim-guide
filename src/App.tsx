@@ -12,6 +12,7 @@ import Hadith from "./pages/Hadith";
 import Reflection from "./pages/Reflection";
 import PrayerTimes from "./pages/PrayerTimes";
 import Tafseer from "./pages/Tafseer";
+import Favorites from "./pages/Favorites"; // New import
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/reflection" element={<Reflection />} />
             <Route path="/prayer-times" element={<PrayerTimes />} />
             <Route path="/tafseer/:surahId/:ayahId" element={<Tafseer />} />
+            <Route path="/favorites" element={<Favorites />} /> {/* New route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

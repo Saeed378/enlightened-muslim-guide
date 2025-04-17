@@ -7,7 +7,7 @@ import { AppLayout } from "@/layouts/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, ChevronLeft, Play, Pause, Volume2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Play, Pause, SkipBack, SkipForward, Bookmark, BookmarkPlus } from "lucide-react";
 import { toast } from "sonner";
 
 const SurahDetailPage = () => {
@@ -18,6 +18,9 @@ const SurahDetailPage = () => {
   const [audioSrc, setAudioSrc] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [currentAyah, setCurrentAyah] = useState(1);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [notes, setNotes] = useState<string>("");
 
   // Get Surah details with improved caching
   const { data: surah, isLoading, error } = useQuery({
@@ -26,6 +29,18 @@ const SurahDetailPage = () => {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes to improve performance
     retry: 2
   });
+
+  // Check if surah is in favorites on mount
+  useEffect(() => {
+    const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+    setIsFavorite(favorites.some((fav: any) => fav.surahNumber === surahNumber));
+    
+    // Get notes for this surah
+    const savedNotes = localStorage.getItem(`notes-surah-${surahNumber}`);
+    if (savedNotes) {
+      setNotes(savedNotes);
+    }
+  }, [surahNumber]);
 
   // Load audio source when surah loads - with better error handling
   useEffect(() => {
@@ -66,6 +81,62 @@ const SurahDetailPage = () => {
         });
       }
     }
+  };
+
+  // Handle previous and next ayah navigation
+  const goToPreviousAyah = () => {
+    if (!surah || !audioRef.current) return;
+    
+    const newAyah = Math.max(1, currentAyah - 1);
+    setCurrentAyah(newAyah);
+    
+    // Normally we would change audio source to specific ayah audio here
+    // For now, we'll show a toast message
+    toast.info(`الانتقال إلى الآية ${newAyah}`);
+  };
+
+  const goToNextAyah = () => {
+    if (!surah || !audioRef.current) return;
+    
+    const maxAyahs = surah.numberOfAyahs;
+    const newAyah = Math.min(maxAyahs, currentAyah + 1);
+    setCurrentAyah(newAyah);
+    
+    // Normally we would change audio source to specific ayah audio here
+    // For now, we'll show a toast message
+    toast.info(`الانتقال إلى الآية ${newAyah}`);
+  };
+
+  // Toggle favorites functionality
+  const toggleFavorite = () => {
+    if (!surah) return;
+    
+    const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+    
+    if (isFavorite) {
+      const newFavorites = favorites.filter((fav: any) => fav.surahNumber !== surahNumber);
+      localStorage.setItem("favorites", JSON.stringify(newFavorites));
+      setIsFavorite(false);
+      toast.info("تمت إزالة السورة من المفضلة");
+    } else {
+      const newFavorite = {
+        surahNumber,
+        name: surah.name,
+        englishName: surah.englishName,
+        numberOfAyahs: surah.numberOfAyahs,
+        addedAt: new Date().toISOString()
+      };
+      favorites.push(newFavorite);
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+      setIsFavorite(true);
+      toast.success("تمت إضافة السورة إلى المفضلة");
+    }
+  };
+
+  // Save notes function
+  const saveNotes = () => {
+    localStorage.setItem(`notes-surah-${surahNumber}`, notes);
+    toast.success("تم حفظ الملاحظات بنجاح");
   };
 
   // Handle audio events
@@ -135,13 +206,33 @@ const SurahDetailPage = () => {
         ) : surah ? (
           <div className="space-y-4">
             <div className="text-center animate-fade-in">
-              <h1 className="text-3xl font-bold tracking-tight mb-2 font-amiri">سورة {surah.name}</h1>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <h1 className="text-3xl font-bold tracking-tight font-amiri">سورة {surah.name}</h1>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleFavorite}
+                  className="h-8 w-8"
+                >
+                  {isFavorite ? <Bookmark className="h-5 w-5 fill-primary text-primary" /> : <BookmarkPlus className="h-5 w-5" />}
+                  <span className="sr-only">{isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}</span>
+                </Button>
+              </div>
               <p className="text-muted-foreground">{surah.englishName} • {surah.numberOfAyahs} آيات • {surah.revelationType === "Meccan" ? "مكية" : "مدنية"}</p>
             </div>
 
             <Card className="border-primary/50">
               <CardContent className="p-6">
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-center mb-4 gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="rounded-full w-10 h-10 p-0 flex items-center justify-center text-primary"
+                    onClick={goToPreviousAyah}
+                    disabled={currentAyah <= 1 || isLoadingAudio}
+                  >
+                    <SkipBack className="h-5 w-5" />
+                  </Button>
+                  
                   <Button 
                     variant="outline" 
                     className="rounded-full w-12 h-12 p-0 flex items-center justify-center text-primary"
@@ -156,6 +247,16 @@ const SurahDetailPage = () => {
                       <Play className="h-6 w-6" />
                     )}
                   </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="rounded-full w-10 h-10 p-0 flex items-center justify-center text-primary"
+                    onClick={goToNextAyah}
+                    disabled={currentAyah >= surah.numberOfAyahs || isLoadingAudio}
+                  >
+                    <SkipForward className="h-5 w-5" />
+                  </Button>
+                  
                   <audio ref={audioRef} src={audioSrc} preload="metadata" />
                 </div>
                 
@@ -179,6 +280,20 @@ const SurahDetailPage = () => {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Notes section */}
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-semibold mb-4">ملاحظاتي</h2>
+                <textarea
+                  className="w-full h-32 p-3 border rounded-md mb-4 resize-none text-right"
+                  placeholder="اكتب ملاحظاتك حول السورة هنا..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                ></textarea>
+                <Button onClick={saveNotes}>حفظ الملاحظات</Button>
               </CardContent>
             </Card>
 

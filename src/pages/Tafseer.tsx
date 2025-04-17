@@ -1,177 +1,116 @@
-
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getSurahDetail, getTafseerList, getAyahTafseer, Tafseer } from "@/services/api";
+import { getAyahTafseer, getTafseerEditions } from "@/services/api";
 import { AppLayout } from "@/layouts/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, ChevronLeft, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
-const TafseerPage = () => {
-  const { surahId, ayahId } = useParams<{ surahId: string, ayahId: string }>();
-  const navigate = useNavigate();
-  const surahNumber = parseInt(surahId || "1");
-  const ayahNumber = parseInt(ayahId || "1");
-  const [selectedTafseer, setSelectedTafseer] = useState<number>(1); // Default tafseer id
+const Tafseer = () => {
+  const { surahId, ayahId } = useParams<{ surahId: string; ayahId: string }>();
+  const [selectedTafseer, setSelectedTafseer] = useState<string | null>(null);
 
-  // Get Surah details
-  const { data: surah, isLoading: surahLoading } = useQuery({
-    queryKey: ["surah", surahNumber],
-    queryFn: () => getSurahDetail(surahNumber),
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to improve loading speed
-    retry: 2
+  const { data: tafseerEditions, isLoading: editionsLoading } = useQuery({
+    queryKey: ["tafseerEditions"],
+    queryFn: getTafseerEditions,
   });
 
-  // Get list of tafseers
-  const { data: tafseers, isLoading: tafseersLoading } = useQuery({
-    queryKey: ["tafseers"],
-    queryFn: getTafseerList,
-    staleTime: Infinity, // This data rarely changes
-    retry: 3
-  });
-
-  // Get tafseer for specific ayah
-  const { data: tafseer, isLoading: tafseerLoading, error: tafseerError } = useQuery({
-    queryKey: ["tafseer", selectedTafseer, surahNumber, ayahNumber],
-    queryFn: () => getAyahTafseer(selectedTafseer, surahNumber, ayahNumber),
-    enabled: !!surah && ayahNumber <= surah.numberOfAyahs,
-    retry: 1,
-    onError: () => {
-      toast.error("تعذر تحميل التفسير، يرجى المحاولة مرة أخرى");
+  const { 
+    data: tafseer, 
+    isLoading: tafseerLoading,
+    error: tafseerError 
+  } = useQuery({
+    queryKey: ["tafseer", surahId, ayahId],
+    queryFn: () => getAyahTafseer(surahId, ayahId, selectedTafseer),
+    enabled: !!surahId && !!ayahId && !!selectedTafseer,
+    meta: {
+      onError: (error: Error) => {
+        console.error("Error fetching tafseer:", error);
+        toast.error("حدث خطأ أثناء تحميل التفسير");
+      }
     }
   });
 
-  // Navigate to next/previous ayah
-  const navigateToPrevAyah = () => {
-    if (ayahNumber > 1) {
-      navigate(`/tafseer/${surahNumber}/${ayahNumber - 1}`);
-    } else if (surahNumber > 1) {
-      navigate(`/tafseer/${surahNumber - 1}/1`);
+  useEffect(() => {
+    if (tafseerEditions && tafseerEditions.length > 0 && !selectedTafseer) {
+      setSelectedTafseer(tafseerEditions[0].identifier);
     }
-  };
+  }, [tafseerEditions, selectedTafseer]);
 
-  const navigateToNextAyah = () => {
-    if (surah && ayahNumber < surah.numberOfAyahs) {
-      navigate(`/tafseer/${surahNumber}/${ayahNumber + 1}`);
-    } else if (surahNumber < 114) {
-      navigate(`/tafseer/${surahNumber + 1}/1`);
-    }
+  const handleTafseerChange = (tafseerId: string) => {
+    setSelectedTafseer(tafseerId);
   };
-
-  const handleTafseerChange = (value: string) => {
-    setSelectedTafseer(parseInt(value));
-  };
-
-  const isLoading = surahLoading || tafseersLoading || tafseerLoading;
 
   return (
     <AppLayout>
       <div className="space-y-6">
         <div className="text-center animate-fade-in">
-          <h1 className="text-3xl font-bold tracking-tight mb-2 font-amiri">التفسير</h1>
-          {surah && (
-            <p className="text-muted-foreground">
-              سورة {surah.name} - الآية {ayahNumber}
-            </p>
-          )}
+          <h1 className="text-3xl font-bold tracking-tight mb-2">تفسير الآية</h1>
+          <p className="text-muted-foreground">اختر تفسير للاطلاع على معاني الآية</p>
         </div>
 
-        {!isLoading && tafseers && (
-          <div className="w-full max-w-md mx-auto mb-4">
-            <Select value={selectedTafseer.toString()} onValueChange={handleTafseerChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="اختر التفسير" />
-              </SelectTrigger>
-              <SelectContent>
-                {tafseers.map((tafseer: Tafseer) => (
-                  <SelectItem key={tafseer.id} value={tafseer.id.toString()}>
-                    {tafseer.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <Tabs 
+          value={selectedTafseer || ""} 
+          onValueChange={handleTafseerChange}
+          className="w-full"
+        >
+          <div className="overflow-x-auto pb-2">
+            <TabsList className="w-full justify-start">
+              {editionsLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-32" />
+                ))
+              ) : (
+                tafseerEditions?.map((edition) => (
+                  <TabsTrigger key={edition.identifier} value={edition.identifier}>
+                    {edition.name}
+                  </TabsTrigger>
+                ))
+              )}
+            </TabsList>
           </div>
-        )}
 
-        {isLoading ? (
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-8 w-32 mx-auto" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-6 w-full mb-2" />
-              <Skeleton className="h-48 w-full" />
-            </CardContent>
-          </Card>
-        ) : tafseerError ? (
-          <div className="text-center py-6">
-            <Card className="border-destructive/50">
-              <CardContent className="pt-6">
-                <p className="text-destructive text-lg mb-3">لم نتمكن من تحميل التفسير</p>
-                <p className="text-muted-foreground mb-4">تم استخدام بيانات بديلة مؤقتة</p>
-                <Button 
-                  onClick={() => window.location.reload()}
-                  variant="outline"
-                  className="mx-auto"
-                >
-                  إعادة المحاولة
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        ) : surah && tafseer ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl text-center font-amiri">
-                {surah.ayahs[ayahNumber - 1]?.text}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6 p-4 bg-primary/5 rounded-md">
-                <h3 className="text-lg font-medium mb-2">{tafseer.tafseer_name}</h3>
-                <p className="text-lg leading-relaxed font-amiri">{tafseer.text}</p>
+          {selectedTafseer && (
+            <TabsContent value={selectedTafseer} className="mt-6">
+              <div className="space-y-4">
+                {tafseerLoading ? (
+                  <Card>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-32" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-24 w-full" />
+                    </CardContent>
+                  </Card>
+                ) : tafseer ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-amiri">
+                        {tafseer.text}
+                      </CardTitle>
+                      <CardDescription>
+                        {tafseer.author_name}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="arabic-text text-lg leading-loose font-amiri">{tafseer.resource_name}</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">لا يوجد تفسير متاح لهذه الآية حالياً.</p>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="text-center py-10">
-            <p className="text-muted-foreground">لا يوجد تفسير متاح لهذه الآية.</p>
-          </div>
-        )}
-
-        <div className="flex justify-between items-center mt-6">
-          <Button 
-            variant="outline" 
-            onClick={navigateToPrevAyah}
-            className="flex items-center gap-2"
-          >
-            <ChevronRight className="h-4 w-4" />
-            <span>الآية السابقة</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(`/surah/${surahNumber}`)}
-            className="flex items-center gap-2"
-          >
-            <BookOpen className="h-4 w-4 ml-2" />
-            <span>العودة للسورة</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={navigateToNextAyah}
-            className="flex items-center gap-2"
-          >
-            <span>الآية التالية</span>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-        </div>
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </AppLayout>
   );
 };
 
-export default TafseerPage;
+export default Tafseer;
