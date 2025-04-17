@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
-// Arabic translations for hadith collections
+// Arabic translations for hadith collections - now fully in Arabic
 const collectionTranslations: Record<string, string> = {
   "bukhari": "صحيح البخاري",
   "muslim": "صحيح مسلم",
