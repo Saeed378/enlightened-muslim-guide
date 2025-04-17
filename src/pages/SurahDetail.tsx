@@ -21,6 +21,7 @@ const SurahDetailPage = () => {
   const [currentAyah, setCurrentAyah] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [notes, setNotes] = useState<string>("");
+  const [ayahAudioTimestamps, setAyahAudioTimestamps] = useState<number[]>([]);
 
   // Get Surah details with improved caching
   const { data: surah, isLoading, error } = useQuery({
@@ -65,6 +66,38 @@ const SurahDetailPage = () => {
     loadAudio();
   }, [surahNumber]);
 
+  // When surah data loads, create estimated timestamps for each ayah
+  useEffect(() => {
+    if (surah && audioRef.current) {
+      // We'll create estimated timestamps once the audio metadata is loaded
+      const handleMetadataLoaded = () => {
+        if (!audioRef.current) return;
+        
+        const totalDuration = audioRef.current.duration;
+        const ayahCount = surah.numberOfAyahs;
+        
+        // Simple estimation: divide total duration by number of ayahs
+        // This is a simple approach; in a real app, you'd use actual timestamps from an API
+        const timestamps: number[] = [];
+        const avgAyahDuration = totalDuration / ayahCount;
+        
+        for (let i = 0; i < ayahCount; i++) {
+          timestamps.push(i * avgAyahDuration);
+        }
+        
+        setAyahAudioTimestamps(timestamps);
+      };
+      
+      audioRef.current.addEventListener('loadedmetadata', handleMetadataLoaded);
+      
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.removeEventListener('loadedmetadata', handleMetadataLoaded);
+        }
+      };
+    }
+  }, [surah]);
+
   // Handle audio play/pause with better feedback
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -83,28 +116,71 @@ const SurahDetailPage = () => {
     }
   };
 
+  // Handle audio timeupdate to track current ayah
+  useEffect(() => {
+    const handleTimeUpdate = () => {
+      if (!audioRef.current || ayahAudioTimestamps.length === 0) return;
+      
+      const currentTime = audioRef.current.currentTime;
+      
+      // Find which ayah we're currently playing
+      for (let i = ayahAudioTimestamps.length - 1; i >= 0; i--) {
+        if (currentTime >= ayahAudioTimestamps[i]) {
+          setCurrentAyah(i + 1);
+          break;
+        }
+      }
+    };
+    
+    if (audioRef.current) {
+      audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
+      
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+        }
+      };
+    }
+  }, [ayahAudioTimestamps]);
+
   // Handle previous and next ayah navigation
   const goToPreviousAyah = () => {
-    if (!surah || !audioRef.current) return;
+    if (!surah || !audioRef.current || !ayahAudioTimestamps.length) return;
     
-    const newAyah = Math.max(1, currentAyah - 1);
-    setCurrentAyah(newAyah);
+    const newAyahIndex = Math.max(0, currentAyah - 2);
+    const newTime = ayahAudioTimestamps[newAyahIndex];
     
-    // Normally we would change audio source to specific ayah audio here
-    // For now, we'll show a toast message
-    toast.info(`الانتقال إلى الآية ${newAyah}`);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+      setCurrentAyah(newAyahIndex + 1);
+      
+      // If audio is paused, start playing
+      if (!isPlaying) {
+        toggleAudio();
+      }
+      
+      toast.info(`الانتقال إلى الآية ${newAyahIndex + 1}`);
+    }
   };
 
   const goToNextAyah = () => {
-    if (!surah || !audioRef.current) return;
+    if (!surah || !audioRef.current || !ayahAudioTimestamps.length) return;
     
     const maxAyahs = surah.numberOfAyahs;
-    const newAyah = Math.min(maxAyahs, currentAyah + 1);
-    setCurrentAyah(newAyah);
+    const newAyahIndex = Math.min(maxAyahs - 1, currentAyah);
+    const newTime = ayahAudioTimestamps[newAyahIndex];
     
-    // Normally we would change audio source to specific ayah audio here
-    // For now, we'll show a toast message
-    toast.info(`الانتقال إلى الآية ${newAyah}`);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+      setCurrentAyah(newAyahIndex + 1);
+      
+      // If audio is paused, start playing
+      if (!isPlaying) {
+        toggleAudio();
+      }
+      
+      toast.info(`الانتقال إلى الآية ${newAyahIndex + 1}`);
+    }
   };
 
   // Toggle favorites functionality
@@ -178,6 +254,11 @@ const SurahDetailPage = () => {
     navigate(`/tafseer/${surahNumber}/1`);
   };
 
+  // Highlight current ayah
+  const isCurrentAyah = (ayahNumber: number) => {
+    return ayahNumber === currentAyah;
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -228,7 +309,7 @@ const SurahDetailPage = () => {
                     variant="outline" 
                     className="rounded-full w-10 h-10 p-0 flex items-center justify-center text-primary"
                     onClick={goToPreviousAyah}
-                    disabled={currentAyah <= 1 || isLoadingAudio}
+                    disabled={currentAyah <= 1 || isLoadingAudio || !ayahAudioTimestamps.length}
                   >
                     <SkipBack className="h-5 w-5" />
                   </Button>
@@ -252,7 +333,7 @@ const SurahDetailPage = () => {
                     variant="outline" 
                     className="rounded-full w-10 h-10 p-0 flex items-center justify-center text-primary"
                     onClick={goToNextAyah}
-                    disabled={currentAyah >= surah.numberOfAyahs || isLoadingAudio}
+                    disabled={currentAyah >= surah.numberOfAyahs || isLoadingAudio || !ayahAudioTimestamps.length}
                   >
                     <SkipForward className="h-5 w-5" />
                   </Button>
@@ -262,10 +343,15 @@ const SurahDetailPage = () => {
                 
                 <div className="space-y-4">
                   {surah.ayahs.map((ayah) => (
-                    <div key={ayah.number} className="pb-2 border-b border-muted last:border-0">
+                    <div 
+                      key={ayah.number} 
+                      className={`pb-2 border-b border-muted last:border-0 ${isCurrentAyah(ayah.numberInSurah) ? 'bg-primary/5 rounded p-2' : ''}`}
+                    >
                       <p className="text-xl leading-relaxed text-right font-amiri arabic-text">
                         {ayah.text} 
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm mr-2">
+                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
+                          isCurrentAyah(ayah.numberInSurah) ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
+                        } text-sm mr-2`}>
                           {ayah.numberInSurah}
                         </span>
                       </p>
