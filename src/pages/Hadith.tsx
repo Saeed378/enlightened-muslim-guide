@@ -64,8 +64,8 @@ const HadithPage = () => {
     <AppLayout>
       <div className="space-y-6">
         <div className="text-center animate-fade-in">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">الأحاديث النبوية</h1>
-          <p className="text-muted-foreground">اختر كتاب الحديث لقراءة الأحاديث</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">موسوعة الأحاديث النبوية</h1>
+          <p className="text-muted-foreground">اختر كتاب الحديث للاطلاع على أحاديث المصطفى ﷺ</p>
         </div>
 
         <Tabs 

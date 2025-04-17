@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { Book, Clock, BookOpen, LucideIcon, BookText, X, BookMarked } from "lucide-react";
 import { Button } from "./ui/button";
@@ -100,8 +99,12 @@ export function AppSidebar({ isOpen, onClose }: SidebarProps) {
           ))}
         </nav>
       </div>
-      <div className="border-t p-4">
+      
+      <div className="border-t p-4 mt-auto">
         <p className="text-xs text-center text-muted-foreground">
+          تم تطوير التطبيق بواسطة م. فارس
+        </p>
+        <p className="text-xs text-center text-muted-foreground mt-1">
           تطبيق القرآن الكريم © {new Date().getFullYear()}
         </p>
       </div>
