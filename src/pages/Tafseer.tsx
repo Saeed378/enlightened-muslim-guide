@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getAyahTafseer, getTafseerEditions } from "@/services/api";
+import { getAyahTafseer, getTafseerEditions, TafseerEdition } from "@/services/api";
 import { AppLayout } from "@/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,8 @@ const Tafseer = () => {
     isLoading: tafseerLoading,
     error: tafseerError 
   } = useQuery({
-    queryKey: ["tafseer", surahId, ayahId],
-    queryFn: () => getAyahTafseer(surahId, ayahId, selectedTafseer),
+    queryKey: ["tafseer", surahId, ayahId, selectedTafseer],
+    queryFn: () => getAyahTafseer(surahId!, ayahId!, selectedTafseer),
     enabled: !!surahId && !!ayahId && !!selectedTafseer,
     meta: {
       onError: (error: Error) => {
@@ -64,7 +65,7 @@ const Tafseer = () => {
                   <Skeleton key={i} className="h-10 w-32" />
                 ))
               ) : (
-                tafseerEditions?.map((edition) => (
+                tafseerEditions?.map((edition: TafseerEdition) => (
                   <TabsTrigger key={edition.identifier} value={edition.identifier}>
                     {edition.name}
                   </TabsTrigger>

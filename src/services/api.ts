@@ -62,12 +62,21 @@ export interface Tafseer {
   author: string;
 }
 
+export interface TafseerEdition {
+  identifier: string;
+  language: string;
+  name: string;
+  author: string;
+}
+
 export interface AyahTafseer {
   tafseer_id: number;
   tafseer_name: string;
   ayah_number: number;
   ayah_text: string;
   text: string;
+  author_name: string;
+  resource_name: string;
 }
 
 // Helper function to handle API errors
@@ -86,7 +95,7 @@ async function handleApiError<T>(promise: Promise<Response>): Promise<T> {
   }
 }
 
-// Quran API services - Using a more reliable endpoint
+// Quran API services
 export async function getSurahs(): Promise<Surah[]> {
   try {
     // Using the meta endpoint which is more reliable
@@ -157,12 +166,12 @@ export async function getHadithsByCollection(
 }
 
 // Mock Tafseer data with more realistic content
-const mockTafseers: Tafseer[] = [
-  { id: 1, name: "تفسير ابن كثير", language: "ar", author: "ابن كثير" },
-  { id: 2, name: "تفسير الطبري", language: "ar", author: "الطبري" },
-  { id: 3, name: "تفسير القرطبي", language: "ar", author: "القرطبي" },
-  { id: 4, name: "تفسير السعدي", language: "ar", author: "السعدي" },
-  { id: 5, name: "تفسير البغوي", language: "ar", author: "البغوي" }
+const mockTafseerEditions: TafseerEdition[] = [
+  { identifier: "1", language: "ar", name: "تفسير ابن كثير", author: "ابن كثير" },
+  { identifier: "2", language: "ar", name: "تفسير الطبري", author: "الطبري" },
+  { identifier: "3", language: "ar", name: "تفسير القرطبي", author: "القرطبي" },
+  { identifier: "4", language: "ar", name: "تفسير السعدي", author: "السعدي" },
+  { identifier: "5", language: "ar", name: "تفسير البغوي", author: "البغوي" }
 ];
 
 // Realistic mock tafseer content (first few surahs)
@@ -200,54 +209,49 @@ const mockTafseerContent: Record<number, Record<number, Record<number, string>>>
 };
 
 // Tafseer API Services (with improved mock fallback)
-export async function getTafseerList(): Promise<Tafseer[]> {
-  if (MOCK_TAFSEER_ENABLED) {
-    return mockTafseers;
-  }
-  
-  try {
-    const response = await fetch("https://api.quran-tafseer.com/tafseer");
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Tafseer API Error:", error);
-    toast.error("حدث خطأ أثناء تحميل بيانات التفسير. الرجاء المحاولة مرة أخرى.");
-    // Return mock data as fallback
-    return mockTafseers;
-  }
+export async function getTafseerEditions(): Promise<TafseerEdition[]> {
+  // Return mock data
+  return Promise.resolve(mockTafseerEditions);
 }
 
-export async function getAyahTafseer(tafsirId: number, surahNumber: number, ayahNumber: number): Promise<AyahTafseer> {
+export async function getAyahTafseer(surahId: string, ayahId: string, selectedTafseer: string | null): Promise<AyahTafseer> {
   if (MOCK_TAFSEER_ENABLED) {
-    // Return realistic mock tafseer data if available
-    const tafseer = mockTafseers.find(t => t.id === tafsirId) || mockTafseers[0];
+    // Convert string IDs to numbers for mock data lookup
+    const surahNumber = parseInt(surahId);
+    const ayahNumber = parseInt(ayahId);
+    const tafseerId = selectedTafseer ? parseInt(selectedTafseer) : 1;
+    
+    // Find the tafseer from our mock editions
+    const tafseer = mockTafseerEditions.find(t => t.identifier === selectedTafseer) || mockTafseerEditions[0];
     
     // Check if we have specific mock content for this surah, ayah and tafseer
-    if (mockTafseerContent[surahNumber]?.[tafsirId]?.[ayahNumber]) {
+    if (mockTafseerContent[surahNumber]?.[tafseerId]?.[ayahNumber]) {
       return {
-        tafseer_id: tafseer.id,
+        tafseer_id: tafseerId,
         tafseer_name: tafseer.name,
         ayah_number: ayahNumber,
         ayah_text: `الآية ${ayahNumber} من سورة ${surahNumber}`,
-        text: mockTafseerContent[surahNumber][tafsirId][ayahNumber]
+        text: mockTafseerContent[surahNumber][tafseerId][ayahNumber],
+        author_name: tafseer.author,
+        resource_name: `تفسير ${tafseer.author} - الجزء ${Math.ceil(surahNumber/10)}`
       };
     }
     
     // Fallback to generic mock content
     return {
-      tafseer_id: tafseer.id,
+      tafseer_id: tafseerId,
       tafseer_name: tafseer.name,
       ayah_number: ayahNumber,
       ayah_text: `الآية ${ayahNumber} من سورة ${surahNumber}`,
-      text: `تفسير الآية ${ayahNumber} من سورة ${surahNumber} حسب ${tafseer.name}. يقول ${tafseer.author}: هذه الآية تتحدث عن ${surahNumber === 1 ? 'فضل الفاتحة ومكانتها' : surahNumber === 2 ? 'مواضيع الإيمان وقصص بني إسرائيل' : 'موضوعات القرآن الكريم وأحكامه'}. وفيها من المعاني والدلالات ما يرشد المؤمن إلى طريق الهداية والصلاح.`
+      text: `تفسير الآية ${ayahNumber} من سورة ${surahNumber} حسب ${tafseer.name}. يقول ${tafseer.author}: هذه الآية تتحدث عن ${surahNumber === 1 ? 'فضل الفاتحة ومكانتها' : surahNumber === 2 ? 'مواضيع الإيمان وقصص بني إسرائيل' : 'موضوعات القرآن الكريم وأحكامه'}. وفيها من المعاني والدلالات ما يرشد المؤمن إلى طريق الهداية والصلاح.`,
+      author_name: tafseer.author,
+      resource_name: `تفسير ${tafseer.author} - الجزء ${Math.ceil(surahNumber/10)}`
     };
   }
   
   try {
-    const response = await fetch(`https://api.quran-tafseer.com/tafseer/${tafsirId}/${surahNumber}/${ayahNumber}`);
+    // In a real implementation, we would call the API here
+    const response = await fetch(`https://api.quran-tafseer.com/tafseer/${selectedTafseer}/${surahId}/${ayahId}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
