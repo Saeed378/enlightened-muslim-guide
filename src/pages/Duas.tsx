@@ -8,14 +8,16 @@ import { DuaCard } from "@/components/DuaCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const DuasPage = () => {
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number>(1); // Default to first category
+  
   const { data: categories, isLoading: isCategoriesLoading } = useQuery({
     queryKey: ["duaCategories"],
     queryFn: getDuaCategories,
   });
 
   const { data: duas, isLoading: isDuasLoading } = useQuery({
-    queryKey: ["duas"],
-    queryFn: getDuas,
+    queryKey: ["duas", selectedCategoryId],
+    queryFn: () => getDuas(selectedCategoryId),
   });
 
   if (isCategoriesLoading || isDuasLoading) {
@@ -44,7 +46,16 @@ const DuasPage = () => {
           <p className="text-muted-foreground">مجموعة من الأدعية والأذكار المأثورة</p>
         </div>
 
-        <Tabs defaultValue={categories?.[0]?.nameEn} dir="rtl">
+        <Tabs 
+          defaultValue={categories?.[0]?.nameEn} 
+          dir="rtl"
+          onValueChange={(value) => {
+            const category = categories?.find(cat => cat.nameEn === value);
+            if (category) {
+              setSelectedCategoryId(category.id);
+            }
+          }}
+        >
           <TabsList className="w-full justify-start mb-4">
             {categories?.map((category) => (
               <TabsTrigger key={category.id} value={category.nameEn}>
