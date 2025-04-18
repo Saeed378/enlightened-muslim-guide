@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -347,8 +346,10 @@ const SurahDetailPage = () => {
                       key={ayah.number} 
                       className={`pb-2 border-b border-muted last:border-0 ${isCurrentAyah(ayah.numberInSurah) ? 'bg-primary/5 rounded p-2' : ''}`}
                     >
-                      <p className="text-xl leading-relaxed text-right font-amiri arabic-text">
-                        {ayah.text} 
+                      <p className="text-xl leading-relaxed font-amiri arabic-text flex flex-wrap gap-2 items-center">
+                        {ayah.text.split(' ').map((word, index) => (
+                          <span key={index} className="inline-block">{word}</span>
+                        ))} 
                         <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
                           isCurrentAyah(ayah.numberInSurah) ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
                         } text-sm mr-2`}>
@@ -374,7 +375,7 @@ const SurahDetailPage = () => {
               <CardContent className="p-6">
                 <h2 className="text-xl font-semibold mb-4">ملاحظاتي</h2>
                 <textarea
-                  className="w-full h-32 p-3 border rounded-md mb-4 resize-none text-right"
+                  className="w-full h-32 p-3 border rounded-md mb-4 resize-none text-right text-foreground bg-background"
                   placeholder="اكتب ملاحظاتك حول السورة هنا..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
