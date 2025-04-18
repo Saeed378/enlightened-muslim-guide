@@ -1,6 +1,5 @@
-
 import { Link, useLocation } from "react-router-dom";
-import { Book, Clock, BookOpen, LucideIcon, BookText, X, BookMarked, Bookmark } from "lucide-react";
+import { Book, Clock, BookOpen, LucideIcon, BookText, X, BookMarked, Bookmark, Prayer } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
@@ -53,9 +52,14 @@ export function AppSidebar({ isOpen, onClose }: SidebarProps) {
       href: "/hadith",
     },
     {
+      icon: Prayer,
+      label: "الأدعية",
+      href: "/duas",
+    },
+    {
       icon: Bookmark,
       label: "المفضلة",
-      href: "/favorites", 
+      href: "/favorites",
     },
     {
       icon: BookOpen,
