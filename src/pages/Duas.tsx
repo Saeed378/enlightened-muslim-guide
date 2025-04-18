@@ -1,7 +1,6 @@
-
 import { AppLayout } from "@/layouts/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { pray, BookMarked, Heart } from "lucide-react";
+import { PrayerBeads, BookMarked, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Dua {
@@ -52,7 +51,7 @@ const DuasPage = () => {
             <Card key={dua.id} className="card-hover">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-bold">{dua.title}</CardTitle>
-                <pray className="h-5 w-5 text-primary" />
+                <PrayerBeads className="h-5 w-5 text-primary" />
               </CardHeader>
               <CardContent>
                 <p className="text-lg font-amiri leading-relaxed mb-4">{dua.text}</p>
