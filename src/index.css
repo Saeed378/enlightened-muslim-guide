@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -99,6 +98,13 @@
   /* Arabic text styles */
   .arabic-text {
     @apply font-amiri text-right;
+  }
+}
+
+@layer components {
+  /* Add this to ensure text inputs are visible */
+  .text-input {
+    @apply text-foreground bg-background border-input;
   }
 }
 
