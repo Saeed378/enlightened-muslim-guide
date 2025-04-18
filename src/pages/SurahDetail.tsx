@@ -346,14 +346,18 @@ const SurahDetailPage = () => {
                       key={ayah.number} 
                       className={`pb-2 border-b border-muted last:border-0 ${isCurrentAyah(ayah.numberInSurah) ? 'bg-primary/5 rounded p-2' : ''}`}
                     >
-                      <p className="text-xl leading-relaxed font-amiri arabic-text flex flex-wrap gap-2 items-center">
-                        {ayah.text.split(' ').map((word, index) => (
-                          <span key={index} className="inline-block">{word}</span>
-                        ))} 
-                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
-                          isCurrentAyah(ayah.numberInSurah) ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
-                        } text-sm mr-2`}>
-                          {ayah.numberInSurah}
+                      <p className="text-xl leading-relaxed font-amiri arabic-text" dir="rtl">
+                        {/* Changed to render text horizontally in a flexible container */}
+                        <span className="inline-flex flex-wrap gap-2 items-center">
+                          {ayah.text.split(' ').map((word, index) => (
+                            <span key={index} className="inline-block">{word}</span>
+                          ))}
+                          
+                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
+                            isCurrentAyah(ayah.numberInSurah) ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
+                          } text-sm mr-2`}>
+                            {ayah.numberInSurah}
+                          </span>
                         </span>
                       </p>
                       <Button 
@@ -370,7 +374,7 @@ const SurahDetailPage = () => {
               </CardContent>
             </Card>
 
-            {/* Notes section */}
+            {/* Notes section - updated text color */}
             <Card>
               <CardContent className="p-6">
                 <h2 className="text-xl font-semibold mb-4">ملاحظاتي</h2>
