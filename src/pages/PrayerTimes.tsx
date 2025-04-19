@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPrayerTimes, NextPrayer } from "@/services/api";
@@ -19,7 +20,7 @@ const PrayerTimesPage = () => {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [city, setCity] = useState<string>("");
-  const [prayerTimes, setPrayerTimes] = useState<any>(null);
+  const [prayerTimes, setPrayerTimes] = useState<Record<string, string> | null>(null);
   const [nextPrayer, setNextPrayer] = useState<NextPrayer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +96,7 @@ const PrayerTimesPage = () => {
     }
   };
 
-  const handleLocationSubmit = (e: any) => {
+  const handleLocationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!latitude || !longitude) {
       toast({
@@ -114,7 +115,7 @@ const PrayerTimesPage = () => {
     return `${hours} ساعة و ${remainingMinutes} دقيقة`;
   };
 
-  const calculateNextPrayer = (prayerTimes: any): NextPrayer | null => {
+  const calculateNextPrayer = (prayerTimes: Record<string, string> | null): NextPrayer | null => {
     if (!prayerTimes) return null;
 
     const prayers = {

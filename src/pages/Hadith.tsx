@@ -33,7 +33,7 @@ const HadithPage = () => {
   });
 
   const { 
-    data: hadiths, 
+    data: hadithResponse, 
     isLoading: hadithsLoading,
     error: hadithError 
   } = useQuery({
@@ -115,9 +115,9 @@ const HadithPage = () => {
                       </CardContent>
                     </Card>
                   ))
-                ) : hadiths && hadiths.length > 0 ? (
+                ) : hadithResponse && hadithResponse.hadiths.length > 0 ? (
                   <>
-                    {hadiths.map((hadith) => (
+                    {hadithResponse.hadiths.map((hadith) => (
                       <Card key={hadith.number}>
                         <CardHeader>
                           <CardTitle className="text-sm flex items-center">
