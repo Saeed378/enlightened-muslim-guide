@@ -244,13 +244,11 @@ export const getSurahAudio = async (surahNumber: number, reciterId = 1): Promise
   try {
     const reciter = reciters.find(r => r.id === reciterId) || reciters[0];
     
-    // Using a more reliable API endpoint format for Quran audio
+    // Format surah number with leading zeros (001, 002, etc.)
     const formattedNumber = surahNumber.toString().padStart(3, '0');
     
-    // Updated URL format to a more reliable source
-    const audioUrl = `https://download.quranicaudio.com/quran/${reciter.identifier}/${formattedNumber}.mp3`;
-    
-    return audioUrl;
+    // This URL format should work more reliably for the specified reciters
+    return `https://server7.mp3quran.net/${reciter.identifier}/${formattedNumber}.mp3`;
   } catch (error) {
     console.error("Error getting surah audio:", error);
     throw new Error("Failed to get surah audio");

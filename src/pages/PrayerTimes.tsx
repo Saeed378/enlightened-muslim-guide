@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPrayerTimes, NextPrayer } from "@/services/api";
@@ -12,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 import { useToast } from "@/components/ui/use-toast";
 
 const PrayerTimesPage = () => {
@@ -83,7 +81,10 @@ const PrayerTimesPage = () => {
       const formattedDate = format(date, "dd-MM-yyyy");
       const prayerTimesData = await getPrayerTimes(latitude, longitude, formattedDate);
       setPrayerTimes(prayerTimesData);
-      setNextPrayer(calculateNextPrayer(prayerTimesData));
+      
+      // Calculate and set the next prayer
+      const nextPrayerInfo = calculateNextPrayer(prayerTimesData);
+      setNextPrayer(nextPrayerInfo);
     } catch (error: any) {
       console.error("Error fetching prayer times:", error);
       setError(error.message || "Failed to fetch prayer times");
@@ -119,13 +120,13 @@ const PrayerTimesPage = () => {
   const calculateNextPrayer = (prayerTimes: Record<string, string> | null): NextPrayer | null => {
     if (!prayerTimes) return null;
 
-    const prayers = {
-      Fajr: { name: "الفجر", time: prayerTimes.Fajr },
-      Sunrise: { name: "الشروق", time: prayerTimes.Sunrise },
-      Dhuhr: { name: "الظهر", time: prayerTimes.Dhuhr },
-      Asr: { name: "العصر", time: prayerTimes.Asr },
-      Maghrib: { name: "المغرب", time: prayerTimes.Maghrib },
-      Isha: { name: "العشاء", time: prayerTimes.Isha }
+    const prayerMapping: Record<string, string> = {
+      Fajr: "الفجر",
+      Sunrise: "الشروق",
+      Dhuhr: "الظهر",
+      Asr: "العصر",
+      Maghrib: "المغرب",
+      Isha: "العشاء"
     };
 
     const now = new Date();
@@ -133,32 +134,33 @@ const PrayerTimesPage = () => {
     let nextPrayer = null;
     let minDiff = Infinity;
 
-    Object.entries(prayers).forEach(([key, prayer]) => {
-      if (typeof prayer.time === 'string') {
-        const [hours, minutes] = prayer.time.split(':').map(Number);
-        const prayerTime = hours * 60 + minutes;
-        const diff = prayerTime - currentTime;
+    // Find the next prayer time
+    Object.entries(prayerTimes).forEach(([key, time]) => {
+      if (prayerMapping[key]) {
+        const [hours, minutes] = time.split(':').map(Number);
+        const prayerTimeInMinutes = hours * 60 + minutes;
+        const diff = prayerTimeInMinutes - currentTime;
 
         if (diff > 0 && diff < minDiff) {
           minDiff = diff;
-          nextPrayer = { 
-            name: prayer.name, 
-            time: prayer.time, 
-            timeRemaining: formatTimeRemaining(diff) 
+          nextPrayer = {
+            name: prayerMapping[key],
+            time: time,
+            timeRemaining: formatTimeRemaining(diff)
           };
         }
       }
     });
 
-    // If no next prayer today, the next prayer is Fajr tomorrow
-    if (!nextPrayer && typeof prayers.Fajr.time === 'string') {
-      const [hours, minutes] = prayers.Fajr.time.split(':').map(Number);
-      const fajrTime = hours * 60 + minutes;
-      const diff = (24 * 60) - currentTime + fajrTime;
+    // If no prayer is left for today, the next prayer is Fajr tomorrow
+    if (!nextPrayer && prayerTimes.Fajr) {
+      const [hours, minutes] = prayerTimes.Fajr.split(':').map(Number);
+      const fajrTimeInMinutes = hours * 60 + minutes;
+      const diff = (24 * 60) - currentTime + fajrTimeInMinutes;
       
       nextPrayer = {
-        name: prayers.Fajr.name,
-        time: prayers.Fajr.time,
+        name: prayerMapping.Fajr,
+        time: prayerTimes.Fajr,
         timeRemaining: formatTimeRemaining(diff)
       };
     }
@@ -249,16 +251,25 @@ const PrayerTimesPage = () => {
           <div className="text-red-500">{error}</div>
         ) : prayerTimes ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Object.entries(prayerTimes).map(([prayer, time]) => (
-              <Card key={prayer}>
-                <CardHeader>
-                  <CardTitle>{prayer}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-semibold">{time}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {Object.entries(prayerTimes)
+              .filter(([prayer]) => ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].includes(prayer))
+              .map(([prayer, time]) => (
+                <Card key={prayer}>
+                  <CardHeader>
+                    <CardTitle>
+                      {prayer === 'Fajr' && 'الفجر'}
+                      {prayer === 'Sunrise' && 'الشروق'}
+                      {prayer === 'Dhuhr' && 'الظهر'}
+                      {prayer === 'Asr' && 'العصر'}
+                      {prayer === 'Maghrib' && 'المغرب'}
+                      {prayer === 'Isha' && 'العشاء'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-semibold">{time}</p>
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         ) : (
           <div className="text-center">
