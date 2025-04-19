@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPrayerTimes } from "@/services/api";
@@ -67,6 +66,7 @@ const PrayerTimesPage = () => {
     }
   }, []);
 
+  
   // Format the prayer time to a more readable format
   const formatTime = (time: string) => {
     if (!time) return "";
@@ -93,13 +93,19 @@ const PrayerTimesPage = () => {
     refetch();
   };
 
-  // Get current time
-  const now = new Date();
-  const currentTime = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+  // Get current time in HH:MM format
+  const getCurrentTime = () => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
 
-  // Find next prayer
+  // Find next prayer - fixed to correctly compare times
   const getNextPrayer = () => {
     if (!prayerTimes) return null;
+    
+    const currentTime = getCurrentTime();
     
     const prayers = [
       { name: "Fajr", time: prayerTimes.Fajr },
@@ -110,14 +116,24 @@ const PrayerTimesPage = () => {
       { name: "Isha", time: prayerTimes.Isha }
     ];
     
+    // Convert time strings to minutes since midnight for proper comparison
+    const timeToMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(num => parseInt(num));
+      return hours * 60 + minutes;
+    };
+    
+    const currentMinutes = timeToMinutes(currentTime);
+    
+    // Find the next prayer
     for (const prayer of prayers) {
-      if (prayer.time > currentTime) {
+      const prayerMinutes = timeToMinutes(prayer.time);
+      if (prayerMinutes > currentMinutes) {
         return prayer;
       }
     }
     
     // If no prayer is found, the next prayer is Fajr of the next day
-    return { name: "Fajr", time: "Next day" };
+    return { name: "Fajr", time: prayerTimes.Fajr };
   };
 
   const nextPrayer = getNextPrayer();
