@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 const BASE_URL = "https://api.alquran.cloud/v1";
@@ -222,7 +221,8 @@ export const getHadithsByCollection = async (collectionId: string, page: number,
 
 export const getPrayerTimes = async (latitude: number, longitude: number, date: string) => {
   try {
-    const response = await axios.get(`https://api.aladhan.com/v1/timingsByCoordinates/${date}?latitude=${latitude}&longitude=${longitude}&method=8`);
+    // Fix the date format - API expects dd-MM-yyyy
+    const response = await axios.get(`https://api.aladhan.com/v1/timings/${date}?latitude=${latitude}&longitude=${longitude}&method=8`);
     return response.data.data.timings;
   } catch (error) {
     console.error("Error fetching prayer times:", error);
@@ -232,11 +232,11 @@ export const getPrayerTimes = async (latitude: number, longitude: number, date: 
 
 // List of available reciters
 export const reciters = [
-  { id: 1, name: "عبد الباسط عبد الصمد", identifier: "abdulbasit_abdulsamad_mujawwad" },
+  { id: 1, name: "عبد الباسط عبد الصمد", identifier: "abdul_basit_murattal" },
   { id: 2, name: "محمود خليل الحصري", identifier: "mahmoud_khalil_al-husary" },
   { id: 3, name: "محمد صديق المنشاوي", identifier: "muhammad_siddiq_al-minshawi" },
-  { id: 4, name: "ماهر المعيقلي", identifier: "maher_al-muaiqly" },
-  { id: 5, name: "مشاري راشد العفاسي", identifier: "mishari_rashid_al-afasy" }
+  { id: 4, name: "ماهر المعيقلي", identifier: "maher_al_muaiqly" },
+  { id: 5, name: "مشاري راشد العفاسي", identifier: "mishari_rashid_alafasy" }
 ];
 
 // Get Surah audio URL with reciter option
@@ -244,9 +244,11 @@ export const getSurahAudio = async (surahNumber: number, reciterId = 1): Promise
   try {
     const reciter = reciters.find(r => r.id === reciterId) || reciters[0];
     
-    // For cloud.ihadis.com API we're using
+    // Using a more reliable API endpoint format for Quran audio
     const formattedNumber = surahNumber.toString().padStart(3, '0');
-    const audioUrl = `https://server8.mp3quran.net/${reciter.identifier}/${formattedNumber}.mp3`;
+    
+    // Updated URL format to a more reliable source
+    const audioUrl = `https://download.quranicaudio.com/quran/${reciter.identifier}/${formattedNumber}.mp3`;
     
     return audioUrl;
   } catch (error) {

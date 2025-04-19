@@ -79,6 +79,7 @@ const PrayerTimesPage = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Format date to dd-MM-yyyy as required by the API
       const formattedDate = format(date, "dd-MM-yyyy");
       const prayerTimesData = await getPrayerTimes(latitude, longitude, formattedDate);
       setPrayerTimes(prayerTimesData);
