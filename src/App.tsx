@@ -14,6 +14,7 @@ import Tafseer from "./pages/Tafseer";
 import Favorites from "./pages/Favorites"; // New import
 import NotFound from "./pages/NotFound";
 import Duas from "./pages/Duas";
+import TasbihPage from "./pages/Tasbih";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/tafseer/:surahId/:ayahId" element={<Tafseer />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/duas" element={<Duas />} />
+            <Route path="/tasbih" element={<TasbihPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
