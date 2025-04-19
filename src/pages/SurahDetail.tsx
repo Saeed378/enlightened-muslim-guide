@@ -1,23 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getSurahDetail, getSurahAudio, reciters, SurahDetail as SurahDetailType } from "@/services/api";
+import { getSurahDetail, getSurahAudio, SurahDetail as SurahDetailType } from "@/services/api";
 import { AppLayout } from "@/layouts/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  ChevronRight, ChevronLeft, Play, Pause, SkipBack, 
-  SkipForward, Bookmark, BookmarkPlus, Headphones 
-} from "lucide-react";
+import { ChevronRight, ChevronLeft, Play, Pause, SkipBack, SkipForward, Bookmark, BookmarkPlus } from "lucide-react";
 import { toast } from "sonner";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 
 const SurahDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,11 +21,6 @@ const SurahDetailPage = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [notes, setNotes] = useState<string>("");
   const [ayahAudioTimestamps, setAyahAudioTimestamps] = useState<number[]>([]);
-  const [selectedReciter, setSelectedReciter] = useState<number>(() => {
-    // Load saved reciter preference from localStorage
-    const saved = localStorage.getItem('preferredReciter');
-    return saved ? parseInt(saved) : 1;
-  });
 
   // Get Surah details with improved caching
   const { data: surah, isLoading, error } = useQuery({
@@ -57,13 +42,12 @@ const SurahDetailPage = () => {
     }
   }, [surahNumber]);
 
-  // Load audio source when surah loads or reciter changes
+  // Load audio source when surah loads - with better error handling
   useEffect(() => {
     const loadAudio = async () => {
       try {
-        setIsPlaying(false);
         setIsLoadingAudio(true);
-        const src = await getSurahAudio(surahNumber, selectedReciter);
+        const src = await getSurahAudio(surahNumber);
         setAudioSrc(src);
         
         // Preload audio
@@ -79,10 +63,7 @@ const SurahDetailPage = () => {
     };
     
     loadAudio();
-    
-    // Save reciter preference
-    localStorage.setItem('preferredReciter', selectedReciter.toString());
-  }, [surahNumber, selectedReciter]);
+  }, [surahNumber]);
 
   // When surah data loads, create estimated timestamps for each ayah
   useEffect(() => {
@@ -115,13 +96,6 @@ const SurahDetailPage = () => {
       };
     }
   }, [surah]);
-
-  // Handle reciter change
-  const handleReciterChange = (value: string) => {
-    const reciterId = parseInt(value);
-    setSelectedReciter(reciterId);
-    toast.success(`تم اختيار ${reciters.find(r => r.id === reciterId)?.name}`);
-  };
 
   // Handle audio play/pause with better feedback
   const toggleAudio = () => {
@@ -327,29 +301,8 @@ const SurahDetailPage = () => {
               <p className="text-muted-foreground">{surah.englishName} • {surah.numberOfAyahs} آيات • {surah.revelationType === "Meccan" ? "مكية" : "مدنية"}</p>
             </div>
 
-            {/* New Reciter Selection */}
             <Card className="border-primary/50">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Headphones className="h-5 w-5 text-primary" />
-                    <span className="font-medium">اختر القارئ:</span>
-                  </div>
-                  
-                  <Select value={selectedReciter.toString()} onValueChange={handleReciterChange}>
-                    <SelectTrigger className="w-[220px]">
-                      <SelectValue placeholder="اختر القارئ" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {reciters.map((reciter) => (
-                        <SelectItem key={reciter.id} value={reciter.id.toString()}>
-                          {reciter.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+              <CardContent className="p-6">
                 <div className="flex justify-center mb-4 gap-2">
                   <Button 
                     variant="outline" 
@@ -421,7 +374,7 @@ const SurahDetailPage = () => {
               </CardContent>
             </Card>
 
-            {/* Notes section */}
+            {/* Notes section - updated text color */}
             <Card>
               <CardContent className="p-6">
                 <h2 className="text-xl font-semibold mb-4">ملاحظاتي</h2>
